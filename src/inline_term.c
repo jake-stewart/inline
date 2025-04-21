@@ -196,7 +196,6 @@ int on_process_output(fd_event ev) {
             &bytes_read
         ), "failed to read from process");
         if (bytes_read == 0) {
-            printf("read no bytes wtf\n");
             fd_unsubscribe(FD_READ, ev.fd);
             input_reader_stop(term->reader);
             goto exit;

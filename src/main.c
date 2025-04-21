@@ -24,7 +24,9 @@ int main(int argc, char **argv) {
         if (!executable && !strchr(config.command[0], '/')) {
             snprintf(relative, 4096, "./%s", config.command[0]);
             executable = is_executable(relative);
-            config.command[0] = relative;
+            if (executable) {
+                config.command[0] = relative;
+            }
         }
         executable;
     }), config.command[0]);

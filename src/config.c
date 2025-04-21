@@ -198,7 +198,7 @@ void parse_options(int argc, char *argv[], Config *config) {
                 break;
             case 'v':
             case 'V':
-                printf("inline 1.0.3\n");
+                printf("inline 1.0.4\n");
                 exit(0);
                 break;
             case 'h':

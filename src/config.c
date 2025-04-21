@@ -139,6 +139,10 @@ void parse_options(int argc, char *argv[], Config *config) {
     optind = 1;
 
     while (optind < argc && argv[optind][0] == '-') {
+        if (!strcmp(argv[optind], "--")) {
+            optind++;
+            break;
+        }
         int opt = getopt_long(
             argc,
             argv,
@@ -194,7 +198,7 @@ void parse_options(int argc, char *argv[], Config *config) {
                 break;
             case 'v':
             case 'V':
-                printf("inline 1.0.1\n");
+                printf("inline 1.0.2\n");
                 exit(0);
                 break;
             case 'h':

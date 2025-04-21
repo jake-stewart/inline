@@ -2,6 +2,7 @@
 #define PSEUDO_TERM_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include "cross_pty.h"
 #include "fd_strategy.h"
 

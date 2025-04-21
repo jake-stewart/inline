@@ -21,8 +21,8 @@ typedef enum {
     COLOR_16_BRIGHT_MAGENTA,
     COLOR_16_BRIGHT_CYAN,
     COLOR_16_BRIGHT_WHITE,
-} color_16;
+} Color16;
 
-color_16 color_16_parse(const char *name);
+Color16 color_16_parse(const char *name);
 
 #endif

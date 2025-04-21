@@ -19,21 +19,21 @@ typedef struct {
 } FdSubscription;
 
 typedef struct {
-    int idx;
     fd_event_type type;
     vec(FdSubscription) subscriptions;
     fd_set fds;
 } FdSubject;
 
+bool active = false;
 FdSubject subjects[3] = {
-    { 0, FD_EXCEPT, NULL, { } },
-    { 1, FD_READ, NULL, { } },
-    { 2, FD_WRITE, NULL, { } }
+    { FD_EXCEPT, NULL, { } },
+    { FD_READ, NULL, { } },
+    { FD_WRITE, NULL, { } }
 };
 
-#define FOR_EACH_FD_SUBJECT(types, set, code) \
-    for (int _fd_type_idx = 0; _fd_type_idx < 3; _fd_type_idx++) { \
-        FdSubject *set = &subjects[_fd_type_idx]; \
+#define FOR_EACH_FD_SUBJECT(types, idx, set, code) \
+    for (int idx = 0; idx < 3; idx++) { \
+        FdSubject *set = &subjects[idx]; \
         if (set->type & types) { \
             code; \
         } \
@@ -50,7 +50,7 @@ void fd_subscribe(
     sub.timeout = -1;
     sub.callback = callback;
     sub.data = data;
-    FOR_EACH_FD_SUBJECT(types, set, {
+    FOR_EACH_FD_SUBJECT(types, idx, set, {
         if (!set->subscriptions) {
             set->subscriptions = vec_new();
         }
@@ -68,24 +68,34 @@ void fd_subscribe(
 }
 
 void fd_unsubscribe(fd_event_type types, int fd) {
-    FOR_EACH_FD_SUBJECT(types, set, {
+    FOR_EACH_FD_SUBJECT(types, idx, set, {
         if (set->subscriptions) {
-            vec_each(set->subscriptions, i, sub, {
-                if (sub.fd == fd) {
-                    vec_remove_at(set->subscriptions, i);
-                    if (vec_len(set->subscriptions) == 0) {
-                        vec_free(set->subscriptions);
-                        set->subscriptions = NULL;
+            if (active) {
+                vec_each_ptr(set->subscriptions, i, sub, {
+                    if (sub->fd == fd) {
+                        sub->fd = -1;
+                        break;
                     }
-                    break;
-                }
-            });
+                });
+            }
+            else {
+                vec_each(set->subscriptions, i, sub, {
+                    if (sub.fd == fd) {
+                        vec_remove_at(set->subscriptions, i);
+                        if (!vec_len(set->subscriptions)) {
+                            vec_free(set->subscriptions);
+                            set->subscriptions = NULL;
+                        }
+                        break;
+                    }
+                });
+            }
         }
     });
 }
 
 void fd_clear_timeout(fd_event_type types, int fd) {
-    FOR_EACH_FD_SUBJECT(types, set, {
+    FOR_EACH_FD_SUBJECT(types, idx, set, {
         if (set->subscriptions) {
             vec_each_ptr(set->subscriptions, i, sub, {
                 if (sub->fd == fd) {
@@ -98,7 +108,7 @@ void fd_clear_timeout(fd_event_type types, int fd) {
 }
 
 void fd_set_timeout(fd_event_type types, int fd, long long timeout_usec) {
-    FOR_EACH_FD_SUBJECT(types, set, {
+    FOR_EACH_FD_SUBJECT(types, idx, set, {
         if (set->subscriptions) {
             vec_each_ptr(set->subscriptions, i, sub, {
                 if (sub->fd == fd) {
@@ -111,18 +121,32 @@ void fd_set_timeout(fd_event_type types, int fd, long long timeout_usec) {
     });
 }
 
+bool fd_has_subscriptions() {
+    FOR_EACH_FD_SUBJECT(FD_ALL, idx, set, {
+        if (set->subscriptions) {
+            return true;
+        }
+    });
+    return false;
+}
+
 int fd_loop() {
     int ret = 0;
 
+    active = true;
+
     int max_fd = -1;
     long long min_timeout = LLONG_MAX;
-    fd_set *sets[3] = { 0 };
+    fd_set *sets[3] = {};
 
-    FOR_EACH_FD_SUBJECT(FD_ALL, set, {
+    FOR_EACH_FD_SUBJECT(FD_ALL, idx, set, {
         if (set->subscriptions) {
-            sets[set->idx] = &set->fds;
+            sets[idx] = &set->fds;
             FD_ZERO(&set->fds);
             vec_each(set->subscriptions, i, sub, {
+                if (sub.fd == -1) {
+                    ERROR("invalid fd");
+                }
                 if (sub.fd > max_fd) {
                     max_fd = sub.fd;
                 }
@@ -138,7 +162,7 @@ int fd_loop() {
     });
 
     if (max_fd == -1) {
-        return -1;
+        ERROR("no fds");
     }
 
     long long now;
@@ -159,9 +183,12 @@ int fd_loop() {
 
     fd_event event;
 
-    FOR_EACH_FD_SUBJECT(FD_ALL, set, {
+    FOR_EACH_FD_SUBJECT(FD_ALL, idx, set, {
         if (set->subscriptions) {
             vec_each_ptr(set->subscriptions, i, sub, {
+                if (sub->fd == -1) {
+                    continue;
+                }
                 bool has_data = FD_ISSET(sub->fd, &set->fds);
                 bool timed_out = !has_data
                     && sub->timeout_remaining == min_timeout;
@@ -177,10 +204,20 @@ int fd_loop() {
                     sub->timeout_remaining -= elapsed;
                 }
             });
+            vec_each_r(set->subscriptions, i, sub, {
+                if (sub.fd == -1) {
+                    vec_remove_at(set->subscriptions, i);
+                }
+            });
+            if (!vec_len(set->subscriptions)) {
+                vec_free(set->subscriptions);
+                set->subscriptions = NULL;
+            }
         }
     });
 
 exit:
+    active = false;
     return ret;
 }
 

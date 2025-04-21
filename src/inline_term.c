@@ -12,7 +12,7 @@
 InlineTerm *inline_term_new() {
     InlineTerm *term;
     ASSERT_NEW(term = malloc(sizeof(InlineTerm)));
-    *term = (InlineTerm){ 0 };
+    *term = (InlineTerm){};
     ASSERT_NEW(term->pty = pseudo_term_new());
     return term;
 
@@ -115,6 +115,17 @@ void inline_term_set_capture(InlineTerm *term, int fileno, bool enabled) {
     }
 }
 
+void inline_term_print_captured_output(InlineTerm *term, int fileno) {
+    if (term->captured_output[fileno]) {
+        size_t len = vec_len(term->captured_output[fileno]);
+        vec_each(term->captured_output[fileno], i, buf, {
+            write(fileno, buf, i == len - 1
+                  ? 4096 - term->captured_output_buffer_remaining[fileno]
+                  : 4096);
+        });
+    }
+}
+
 void inline_term_set_redirect_stdin(InlineTerm *term, bool enabled) {
     term->fd_strategy.strategy[STDIN_FILENO] = enabled
         ? FD_STRATEGY_REDIRECT : FD_STRATEGY_NONE;
@@ -172,32 +183,55 @@ int on_process_output(fd_event ev) {
     InlineTerm *term = ev.data;
     if (ev.timed_out) {
         fd_clear_timeout(FD_READ, ev.fd);
+        term->render_timeout = 0;
         inline_term_update(term, false);
     }
     else {
         char buffer[4096];
-        ssize_t bytes_read;
-        ASSERT(({
-            bytes_read = read(ev.fd, buffer, sizeof buffer);
-            if (bytes_read < 0 && errno == EIO) {
-                bytes_read = 0;
-            }
-            bytes_read >= 0;
-        }), "failed to read from process");
-
+        size_t bytes_read;
+        ASSERT(!pseudo_term_read(
+            term->pty,
+            buffer,
+            sizeof buffer,
+            &bytes_read
+        ), "failed to read from process");
         if (bytes_read == 0) {
-            term->pty->alive = false;
+            printf("read no bytes wtf\n");
+            fd_unsubscribe(FD_READ, ev.fd);
+            input_reader_stop(term->reader);
             goto exit;
         }
         vterm_input_write(term->vterm, buffer, bytes_read);
         long long now = usec_timestamp();
-        if (now - term->last_render > 16000) {
-            term->last_render = now;
-            inline_term_update(term, false);
-            fd_clear_timeout(FD_READ, ev.fd);
+        if (now - term->last_output < 1000) {
+            if (!term->burst_start) {
+                term->burst_start = now;
+            }
         }
         else {
-            fd_set_timeout(FD_READ, ev.fd, 16000);
+            term->burst_start = 0;
+        }
+        term->last_output = now;
+        const int throttle = 32 * 1000;
+        if (!term->burst_start
+            || now - term->burst_start < throttle
+        ) {
+            inline_term_update(term, false);
+            if (term->render_timeout) {
+                term->render_timeout = 0;
+                fd_clear_timeout(FD_READ, ev.fd);
+            }
+        }
+        else if (term->render_timeout) {
+            if (now >= term->render_timeout) {
+                inline_term_update(term, false);
+                term->render_timeout = now + throttle;
+                fd_set_timeout(FD_READ, ev.fd, throttle);
+            }
+        }
+        else {
+            term->render_timeout = now + throttle;
+            fd_set_timeout(FD_READ, ev.fd, throttle);
         }
     }
 exit:
@@ -209,38 +243,53 @@ exit:
 
 int on_process_capture(fd_event ev) {
     int ret = 0;
-    InlineTerm *term = ev.data;
+    char *allocated = NULL;
     ASSERT(!ev.timed_out);
-    char buffer[4096];
+    InlineTerm *term = ev.data;
+    bool is_stdout = ev.fd == term->pty->fds[STDOUT_FILENO];
+    int fileno = is_stdout ? STDOUT_FILENO : STDERR_FILENO;
+    vec(char*) output = term->captured_output[fileno];
+    size_t remaining = term->captured_output_buffer_remaining[fileno];
+
+    char *buffer;
+    if (remaining == 0) {
+        remaining = 4096;
+        ASSERT(allocated = malloc(remaining));
+        buffer = allocated;
+    }
+    else {
+        buffer = vec_at(output, vec_len(output) - 1) + (4096 - remaining);
+    }
+
     ssize_t bytes_read;
     ASSERT(({
-        bytes_read = read(ev.fd, buffer, sizeof buffer);
+        bytes_read = read(ev.fd, buffer, remaining);
     }) >= 0);
     if (bytes_read == 0) {
         fd_unsubscribe(FD_READ, ev.fd);
+        goto exit;
+    }
+
+    if (allocated) {
+        vec_push(output, allocated);
+        term->captured_output_buffer_remaining[fileno] = 4096 - bytes_read;
     }
     else {
-        bool is_stdout = ev.fd == term->pty->fds[STDOUT_FILENO];
-        vec(SizedBuffer) output = term->captured_output[
-            is_stdout ? STDOUT_FILENO : STDERR_FILENO];
-        SizedBuffer buf;
-        buf.size = bytes_read;
-        buf.buffer = malloc(bytes_read);
-        memcpy(buf.buffer, buffer, bytes_read);
-        vec_push(output, buf);
-        struct termios termios;
-        tcgetattr(term->pty->master_fd, &termios);
-        char *term_buf = buffer;
-        char converted[8192];
-        if (termios.c_oflag & ONLCR) {
-            bytes_read = lf_to_crlf(
-                term_buf, bytes_read, converted);
-            term_buf = converted;
-        }
-        vterm_input_write(term->vterm, term_buf, bytes_read);
+        term->captured_output_buffer_remaining[fileno] -= bytes_read;
     }
+
+    struct termios termios;
+    tcgetattr(term->pty->master_fd, &termios);
+    char converted[8192];
+    if (termios.c_oflag & ONLCR) {
+        bytes_read = lf_to_crlf(buffer, bytes_read, converted);
+        buffer = converted;
+    }
+    vterm_input_write(term->vterm, buffer, bytes_read);
+
 exit:
     if (ret) {
+        free(allocated);
         fd_unsubscribe(FD_READ, ev.fd);
     }
     return ret;
@@ -258,13 +307,13 @@ int inline_term_create_vterm(InlineTerm *term) {
     VTermState *state = vterm_obtain_state(term->vterm);
     vterm_state_reset(state, true);
 
-    static VTermStateCallbacks state_cbs = { 0 };
+    static VTermStateCallbacks state_cbs = {};
     state_cbs.settermprop = settermprop;
     vterm_state_set_callbacks(state, &state_cbs, term);
 
     VTermScreen *screen = vterm_obtain_screen(term->vterm);
     vterm_screen_reset(screen, true);
-    static VTermScreenCallbacks screen_cbs = { 0 };
+    static VTermScreenCallbacks screen_cbs = {};
     screen_cbs.movecursor = movecursor;
     screen_cbs.damage = damage;
     screen_cbs.settermprop = settermprop;
@@ -452,7 +501,7 @@ int inline_term_mainloop(InlineTerm *term) {
         }
     }
 
-    while (term->pty->alive) {
+    while (fd_has_subscriptions()) {
         ASSERT(({
             int status;
             if (term->resized) {

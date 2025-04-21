@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define TIMEOUT_READ_TIMEOUT -1
+#define TIMEOUT_READ_ERROR -2
+
 ssize_t timeout_read(
     int fd,
     char *buffer,

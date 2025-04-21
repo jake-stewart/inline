@@ -16,7 +16,7 @@ PseudoTerm *pseudo_term_new() {
             .fds = {-1, -1, -1},
             .alive = false,
             .exit_status = -1,
-            .winsize = { 0, 0, 0, 0 },
+            .winsize = {},
             .initial_termios = NULL
         };
     }
@@ -69,7 +69,7 @@ int pseudo_term_start(PseudoTerm *pty, char **command, FdStrategy fd_strategy) {
         &pty->winsize
     );
 
-    if (pty->pid == 0) {
+    if (!pty->pid) {
         if (fd_strategy_apply_slave(&fd_strategy)) {
             _exit(1);
         }
@@ -82,6 +82,28 @@ int pseudo_term_start(PseudoTerm *pty, char **command, FdStrategy fd_strategy) {
         pty->alive = true;
         ASSERT(!fd_strategy_apply_master(&fd_strategy, pty->fds));
     }
+exit:
+    return ret;
+}
+
+int pseudo_term_read(
+    PseudoTerm *term,
+    char *buffer,
+    size_t buf_size,
+    size_t *bytes_read
+) {
+    int ret = 0;
+    ASSERT(({
+        ssize_t result = read(term->master_fd, buffer, sizeof buffer);
+        if (result < 0 && errno == EIO) {
+            result = 0;
+        }
+        if (result == 0) {
+            term->alive = false;
+        }
+        *bytes_read = result;
+        result >= 0;
+    }));
 exit:
     return ret;
 }

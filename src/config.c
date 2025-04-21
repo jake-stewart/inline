@@ -30,7 +30,7 @@ void usage() {
 }
 
 void color_arg(const char *name, AnsiColor *dest) {
-    color_16 c16 = color_16_parse(optarg);
+    Color16 c16 = color_16_parse(optarg);
     if (c16 != COLOR_16_UNKNOWN) {
         dest->data.color_256 = c16;
         dest->type = ANSI_COLOR_TYPE_256;
@@ -48,8 +48,8 @@ void color_arg(const char *name, AnsiColor *dest) {
         dest->type = ANSI_COLOR_TYPE_256;
         return;
     }
-    color_rgb rgb;
-    if (color_rgb_parse(optarg, &rgb) == 0) {
+    ColorRgb rgb;
+    if (!color_rgb_parse(optarg, &rgb)) {
         dest->data.color_rgb = rgb;
         dest->type = ANSI_COLOR_TYPE_RGB;
         return;
@@ -112,11 +112,11 @@ void percent_arg(
 void parse_options(int argc, char *argv[], Config *config) {
     prog = argv[0];
 
-    AnsiStyle border_style = { 0 };
+    AnsiStyle border_style = {};
     border_style.fg.type = ANSI_COLOR_TYPE_256;
     border_style.fg.data.color_256 = COLOR_16_BRIGHT_BLACK;
 
-    *config = (Config) { 0 };
+    *config = (Config) {};
     config->border = BORDER_TYPE_PLAIN;
     config->border_style = border_style;
     config->vertical_resize_config.exact = 10;
@@ -194,7 +194,7 @@ void parse_options(int argc, char *argv[], Config *config) {
                 break;
             case 'v':
             case 'V':
-                printf("inline 1.0.0\n");
+                printf("inline 1.0.1\n");
                 exit(0);
                 break;
             case 'h':

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
-int color_rgb_parse(const char *str, color_rgb *rgb) {
+int color_rgb_parse(const char *str, ColorRgb *rgb) {
     int result = 0;
 
     if (str[0] == '#') {
@@ -32,5 +32,5 @@ int color_rgb_parse(const char *str, color_rgb *rgb) {
         );
     }
 
-    return result == 3 ? 0 : 1;
+    return result == 3 ? 0 : -1;
 }

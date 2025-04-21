@@ -17,7 +17,7 @@ size_t lf_to_crlf(char* input, size_t input_len, char* output) {
 }
 
 bool str_startswith(const char *str, const char *prefix) {
-    return strncmp(str, prefix, strlen(prefix)) == 0;
+    return !strncmp(str, prefix, strlen(prefix));
 }
 
 bool str_endswith(const char *str, const char *postfix) {
@@ -26,7 +26,7 @@ bool str_endswith(const char *str, const char *postfix) {
     if (postfix_len > str_len) {
         return false;
     }
-    return strcmp(str + str_len - postfix_len, postfix) == 0;
+    return !strcmp(str + str_len - postfix_len, postfix);
 }
 
 char *str_tolower(const char *str) {

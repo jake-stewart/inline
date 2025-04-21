@@ -32,6 +32,7 @@ void fd_unsubscribe(fd_event_type type, int fd);
 void fd_clear_timeout(fd_event_type type, int fd);
 void fd_set_timeout(fd_event_type type, int fd, long long timeout_usec);
 
+bool fd_has_subscriptions();
 int fd_loop();
 
 #endif

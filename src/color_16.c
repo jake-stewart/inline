@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-color_16 color_16_parse(const char *name) {
+Color16 color_16_parse(const char *name) {
     char *lower_name = str_tolower(name);
     char *color_name = lower_name;
 
@@ -22,32 +22,32 @@ color_16 color_16_parse(const char *name) {
             || color_name[0] == ' ';
     }
 
-    color_16 color = COLOR_16_UNKNOWN;
+    Color16 color = COLOR_16_UNKNOWN;
 
-    if (strcmp(color_name, "red") == 0) {
+    if (!strcmp(color_name, "red")) {
         color = COLOR_16_RED;
     }
-    else if (strcmp(color_name, "green") == 0) {
+    else if (!strcmp(color_name, "green")) {
         color = COLOR_16_GREEN;
     }
-    else if (strcmp(color_name, "blue") == 0) {
+    else if (!strcmp(color_name, "blue")) {
         color = COLOR_16_BLUE;
     }
-    else if (strcmp(color_name, "cyan") == 0) {
+    else if (!strcmp(color_name, "cyan")) {
         color = COLOR_16_CYAN;
     }
-    else if (strcmp(color_name, "yellow") == 0) {
+    else if (!strcmp(color_name, "yellow")) {
         color = COLOR_16_YELLOW;
     }
-    else if (strcmp(color_name, "magenta") == 0
-        || strcmp(name, "purple") == 0
+    else if (!strcmp(color_name, "magenta")
+        || !strcmp(name, "purple")
     ) {
         color = COLOR_16_MAGENTA;
     }
-    else if (strcmp(color_name, "black") == 0) {
+    else if (!strcmp(color_name, "black")) {
         color = COLOR_16_BLACK;
     }
-    else if (strcmp(color_name, "white") == 0) {
+    else if (!strcmp(color_name, "white")) {
         color = COLOR_16_WHITE;
     }
 

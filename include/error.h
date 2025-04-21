@@ -5,7 +5,7 @@
 extern _Thread_local const char *errmsg;
 extern _Thread_local char errmsg_buffer[1024];
 
-// #define DEBUG_ASSERT
+#define DEBUG_ASSERT
 
 #define ASSERT_NEW(expr) \
     if (!(expr)) { \
@@ -58,9 +58,11 @@ extern _Thread_local char errmsg_buffer[1024];
     errmsg = NULL; \
     if (!(expr)) { \
         ret = errno ? errno : -1; \
-        snprintf(errmsg_buffer, 1024, "%s:%d: %s", \
-                 file, line, message); \
-        errmsg = errmsg_buffer; \
+        if (!errmsg) { \
+            snprintf(errmsg_buffer, 1024, "%s:%d: %s", \
+                     file, line, message); \
+            errmsg = errmsg_buffer; \
+        } \
         goto exit; \
     } \
 }

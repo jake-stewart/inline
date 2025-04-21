@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     int ret = 0;
     int exit_status = 0;
 
-    Config config = { 0 };
+    Config config = {};
     InlineTerm *term = NULL;
 
     parse_options(argc, argv, &config);
@@ -37,13 +37,8 @@ int main(int argc, char **argv) {
     ASSERT(!inline_term_start(term, config.command));
     exit_status = pseudo_term_exit_status(term->pty);
 
-    for (int i = STDOUT_FILENO; i <= STDERR_FILENO; i++) {
-        if (term->captured_output[i]) {
-            vec_each(term->captured_output[i], j, buf, {
-                write(i, buf.buffer, buf.size);
-            });
-        }
-    }
+    inline_term_print_captured_output(term, STDOUT_FILENO);
+    inline_term_print_captured_output(term, STDERR_FILENO);
 
 exit:
     if (term) {

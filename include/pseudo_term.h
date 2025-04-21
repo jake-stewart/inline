@@ -20,6 +20,12 @@ void pseudo_term_free(PseudoTerm *term);
 int pseudo_term_exit_status(PseudoTerm *term);
 int pseudo_term_kill(PseudoTerm *term, int sig);
 int pseudo_term_resize(PseudoTerm *term, int rows, int cols);
+int pseudo_term_read(
+    PseudoTerm *term,
+    char *buffer,
+    size_t buf_size,
+    size_t *bytes_read
+);
 int pseudo_term_start(
     PseudoTerm *term,
     char **command,

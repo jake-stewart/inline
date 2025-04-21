@@ -140,7 +140,7 @@ exit:
     return ret;
 }
 
-int ansi_get_background_color(color_rgb *color) {
+int ansi_get_background_color(ColorRgb *color) {
     int ret = 0;
     char buf[128];
     int len = 0;
@@ -168,9 +168,6 @@ exit:
 
 void ansi_set_style(AnsiStyle style) {
     ansi_write(ANSI_ESC "0");
-    // if (!style.blend) {
-    //     ansi_write("0");
-    // }
 
     switch (style.fg.type) {
         case ANSI_COLOR_TYPE_NONE:

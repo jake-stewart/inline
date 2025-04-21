@@ -9,11 +9,11 @@ ssize_t timeout_read(int fd, char *buffer, size_t size, long long timeout_usec) 
     struct timeval timeout = usec_to_timeval(timeout_usec);
     ssize_t status = select(fd + 1, &set, NULL, NULL, &timeout);
     if (status <= 0) {
-        return status == 0 ? -1 : -2;
+        return status ? TIMEOUT_READ_ERROR : TIMEOUT_READ_TIMEOUT;
     }
     status = read(fd, buffer, size);
     if (status < 0) {
-        return -2;
+        return TIMEOUT_READ_ERROR;
     }
     return status;
 }

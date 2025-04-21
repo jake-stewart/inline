@@ -5,8 +5,8 @@ typedef struct {
     unsigned char r;
     unsigned char g;
     unsigned char b;
-} color_rgb;
+} ColorRgb;
 
-int color_rgb_parse(const char *str, color_rgb *rgb);
+int color_rgb_parse(const char *str, ColorRgb *rgb);
 
 #endif

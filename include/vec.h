@@ -159,6 +159,54 @@ VEC_ATTR void _vec_remove_at(void *vec, size_t elem_size, size_t idx) {
 
 #define vec_remove_at(vec, idx) _vec_remove_at(vec, sizeof(*vec), idx)
 
+#define vec_each(vec, idx, name, code) \
+    for (size_t idx = 0; idx < vec_len(vec); idx++) { \
+        typeof(*vec) name = vec_at(vec, idx); \
+        code \
+    }
+
+#define vec_each_ptr(vec, idx, name, code) \
+    for (size_t idx = 0; idx < vec_len(vec); idx++) { \
+        typeof(vec) name = &vec_at(vec, idx); \
+        code \
+    }
+
+#define vec_each_r(vec, idx, name, code) \
+    for (ssize_t idx = vec_len(vec) - 1; idx >= 0; idx--) { \
+        typeof(*vec) name = vec_at(vec, idx); \
+        code \
+    }
+
+#define vec_each_ptr_r(vec, idx, name, code) \
+    for (ssize_t idx = vec_len(vec) - 1; idx >= 0; idx--) { \
+        typeof(vec) name = &vec_at(vec, idx); \
+        code \
+    }
+
+#define arr_each(arr, idx, name, code) \
+    for (size_t idx = 0; idx < sizeof(arr) / sizeof(arr[0]); idx++) { \
+        typeof(*arr) name = arr[idx]; \
+        code \
+    }
+
+#define arr_each_ptr(arr, idx, name, code) \
+    for (size_t idx = 0; idx < sizeof(arr) / sizeof(arr[0]); idx++) { \
+        typeof(arr) name = &arr[idx]; \
+        code \
+    }
+
+#define arr_each_r(arr, idx, name, code) \
+    for (ssize_t idx = sizeof(arr) / sizeof(arr[0]) - 1; idx >= 0; idx--) { \
+        typeof(*arr) name = arr[idx]; \
+        code \
+    }
+
+#define arr_each_ptr_r(arr, idx, name, code) \
+    for (ssize_t idx = sizeof(arr) / sizeof(arr[0]) - 1; idx >= 0; idx--) { \
+        typeof(arr) name = &arr[idx]; \
+        code \
+    }
+
 #define vec_map(vec, idx, name, code) { \
     vec_each(vec, idx, name, { \
         vec_at(vec, idx) = (code); \
@@ -182,13 +230,19 @@ VEC_ATTR void _vec_remove_at(void *vec, size_t elem_size, size_t idx) {
     vec2; \
 })
 
-#define vec_reduce(vec, idx, name, acc, init, code) ({ \
+#define vec_reduce_impl(each, vec, idx, name, acc, init, code) ({ \
     typeof(init) acc = init; \
-    vec_each(vec, idx, name, { \
+    each(vec, idx, name, { \
         acc = (code); \
     }) \
     acc; \
 })
+
+#define vec_reduce(vec, idx, name, acc, init, code) \
+    vec_reduce_impl(vec_each, vec, idx, name, acc, init, code)
+
+#define vec_reduce_r(vec, idx, name, acc, init, code) \
+    vec_reduce_impl_r(vec_each_r, vec, idx, name, acc, init, code)
 
 #define vec_filter_new(vec, idx, name, code) ({ \
     typeof(vec) vec2 = vec_new(); \
@@ -216,9 +270,9 @@ VEC_ATTR void _vec_remove_at(void *vec, size_t elem_size, size_t idx) {
     vec_resize(vec, _vec_filter_idx); \
 }
 
-#define vec_find_index(vec, idx, name, code) ({ \
+#define vec_find_index_impl(each, vec, idx, name, code) ({ \
     ssize_t found = -1; \
-    vec_each(vec, idx, name, { \
+    each(vec, idx, name, { \
         if (code) { \
             found = idx; \
             break; \
@@ -227,9 +281,15 @@ VEC_ATTR void _vec_remove_at(void *vec, size_t elem_size, size_t idx) {
     found; \
 })
 
-#define vec_find(vec, idx, name, code) ({ \
+#define vec_find_index(vec, idx, name, code) \
+    vec_find_index_impl(vec_each, vec, idx, name, code)
+
+#define vec_find_index_r(vec, idx, name, code) \
+    vec_find_index_impl(vec_each_r, vec, idx, name, code)
+
+#define vec_find_impl(each, vec, idx, name, code) ({ \
     typeof(*vec) *found = NULL; \
-    vec_each(vec, idx, name, { \
+    each(vec, idx, name, { \
         if (code) { \
             found = &vec_at(vec, idx); \
             break; \
@@ -238,28 +298,10 @@ VEC_ATTR void _vec_remove_at(void *vec, size_t elem_size, size_t idx) {
     found; \
 })
 
-#define vec_each(vec, idx, name, code) \
-    for (size_t idx = 0; idx < vec_len(vec); idx++) { \
-        typeof(*vec) name = vec_at(vec, idx); \
-        code \
-    }
+#define vec_find(vec, idx, name, code) \
+    vec_find_impl(vec_each, vec, idx, name, code)
 
-#define vec_each_ptr(vec, idx, name, code) \
-    for (size_t idx = 0; idx < vec_len(vec); idx++) { \
-        typeof(vec) name = &vec_at(vec, idx); \
-        code \
-    }
-
-#define arr_each(arr, idx, name, code) \
-    for (size_t idx = 0; idx < sizeof(arr) / sizeof(arr[0]); idx++) { \
-        typeof(*arr) name = arr[idx]; \
-        code \
-    }
-
-#define arr_each_ptr(arr, idx, name, code) \
-    for (size_t idx = 0; idx < sizeof(arr) / sizeof(arr[0]); idx++) { \
-        typeof(arr) name = &arr[idx]; \
-        code \
-    }
+#define vec_find_r(vec, idx, name, code) \
+    vec_find_impl(vec_each_r, vec, idx, name, code)
 
 #endif

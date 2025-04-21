@@ -33,7 +33,7 @@ bool inline_term_renderer_render(InlineTermRenderer *renderer) {
                 currentAttrs.bold != cell.attrs.bold ||
                 currentAttrs.reverse != cell.attrs.reverse)
             {
-                AnsiStyle style = { 0 };
+                AnsiStyle style = {};
 
                 if (VTERM_COLOR_IS_INDEXED(&cell.fg)) {
                     style.fg.type = ANSI_COLOR_TYPE_256;
@@ -44,7 +44,7 @@ bool inline_term_renderer_render(InlineTermRenderer *renderer) {
                 }
                 else if (VTERM_COLOR_IS_RGB(&cell.fg)) {
                     style.fg.type = ANSI_COLOR_TYPE_RGB;
-                    style.fg.data.color_rgb = (color_rgb) {
+                    style.fg.data.color_rgb = (ColorRgb) {
                         cell.fg.rgb.red,
                         cell.fg.rgb.green,
                         cell.fg.rgb.blue
@@ -60,7 +60,7 @@ bool inline_term_renderer_render(InlineTermRenderer *renderer) {
                 }
                 else if (VTERM_COLOR_IS_RGB(&cell.bg)) {
                     style.bg.type = ANSI_COLOR_TYPE_RGB;
-                    style.bg.data.color_rgb = (color_rgb) {
+                    style.bg.data.color_rgb = (ColorRgb) {
                         cell.bg.rgb.red,
                         cell.bg.rgb.green,
                         cell.bg.rgb.blue
@@ -110,7 +110,7 @@ bool inline_term_renderer_render(InlineTermRenderer *renderer) {
 InlineTermRenderer *inline_term_renderer_new(VTermScreen *screen) {
     InlineTermRenderer *renderer = malloc(sizeof(InlineTermRenderer));
     if (renderer) {
-        *renderer = (InlineTermRenderer) { 0 };
+        *renderer = (InlineTermRenderer) {};
         renderer->screen = screen;
         renderer->damage = (VTermRect) {
             .start_row = -1,

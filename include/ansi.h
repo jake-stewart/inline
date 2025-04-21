@@ -44,7 +44,7 @@ void ansi_save_cursor();
 void ansi_restore_cursor();
 
 int ansi_get_pos(int *x, int *y);
-int ansi_get_background_color(color_rgb *color);
+int ansi_get_background_color(ColorRgb *color);
 
 void ansi_set_scroll_region(int min_row, int max_row);
 void ansi_reset_scroll_region();
@@ -68,14 +68,13 @@ typedef struct {
     AnsiColorType type;
     union {
         unsigned char color_256;
-        color_rgb color_rgb;
+        ColorRgb color_rgb;
     } data;
 } AnsiColor;
 
 typedef struct {
     AnsiColor fg;
     AnsiColor bg;
-    bool blend;
     bool bold;
     bool italic;
     bool strikethrough;

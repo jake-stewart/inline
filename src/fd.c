@@ -26,9 +26,9 @@ typedef struct {
 } FdSubject;
 
 FdSubject subjects[3] = {
-    { 0, FD_EXCEPT, NULL, { 0 } },
-    { 1, FD_READ, NULL, { 0 } },
-    { 2, FD_WRITE, NULL, { 0 } }
+    { 0, FD_EXCEPT, NULL, { } },
+    { 1, FD_READ, NULL, { } },
+    { 2, FD_WRITE, NULL, { } }
 };
 
 #define FOR_EACH_FD_SUBJECT(types, set, code) \

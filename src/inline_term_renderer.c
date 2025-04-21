@@ -77,7 +77,7 @@ bool inline_term_renderer_render(InlineTermRenderer *renderer) {
                     style.italic = true;
                 }
                 if (cell.attrs.underline) {
-                    style.underline = VTERM_UNDERLINE_SINGLE;
+                    style.underline = ANSI_UNDERLINE_NONE;
                 }
 
                 hasColor = true;

@@ -1,4 +1,5 @@
 #include "usec.h"
+#include <stddef.h>
 
 #define MSEC_IN_SEC 1000
 #define USEC_IN_MSEC 1000

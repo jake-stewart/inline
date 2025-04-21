@@ -50,12 +50,12 @@ void ansi_set_scroll_region(int min_row, int max_row);
 void ansi_reset_scroll_region();
 
 typedef enum {
-    NO_UNDERLINE = 0,
-    LINE,
-    DOUBLE,
-    CURLY,
-    DOTTED,
-    DASHED
+    ANSI_UNDERLINE_NONE = 0,
+    ANSI_UNDERLINE_LINE,
+    ANSI_UNDERLINE_DOUBLE,
+    ANSI_UNDERLINE_CURLY,
+    ANSI_UNDERLINE_DOTTED,
+    ANSI_UNDERLINE_DASHED
 } AnsiUnderlineType;
 
 typedef enum {

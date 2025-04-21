@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 PseudoTerm *pseudo_term_new() {
     PseudoTerm *pty = malloc(sizeof(PseudoTerm));
@@ -59,7 +60,7 @@ int pseudo_term_start(PseudoTerm *pty, char **command, FdStrategy fd_strategy) {
     int ret = 0;
     pty->alive = false;
 
-    fd_strategy_prepare(&fd_strategy);
+    ASSERT(!fd_strategy_prepare(&fd_strategy));
 
     pty->pid = forkpty(
         &pty->master_fd,
@@ -69,7 +70,9 @@ int pseudo_term_start(PseudoTerm *pty, char **command, FdStrategy fd_strategy) {
     );
 
     if (pty->pid == 0) {
-        fd_strategy_apply_slave(&fd_strategy);
+        if (fd_strategy_apply_slave(&fd_strategy)) {
+            _exit(1);
+        }
         setenv("TERM", "xterm-256color", true);
         execvp(command[0], command);
         _exit(1);
@@ -77,7 +80,7 @@ int pseudo_term_start(PseudoTerm *pty, char **command, FdStrategy fd_strategy) {
     else {
         ASSERT(pty->pid > 0);
         pty->alive = true;
-        fd_strategy_apply_master(&fd_strategy, pty->fds);
+        ASSERT(!fd_strategy_apply_master(&fd_strategy, pty->fds));
     }
 exit:
     return ret;

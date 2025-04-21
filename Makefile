@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -O3 -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter -g \
-         -I./include `pkg-config --cflags vterm termkey`
+CFLAGS = -O3 -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter \
+	-Wno-parentheses -g -I./include `pkg-config --cflags vterm termkey`
 LDFLAGS = `pkg-config --libs vterm termkey`
 
 SRC = $(wildcard src/*.c)

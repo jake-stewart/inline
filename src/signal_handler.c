@@ -1,6 +1,7 @@
 #include "signal_handler.h"
 #include "vec.h"
 #include <stdbool.h>
+#include <signal.h>
 
 typedef struct {
     int sig;

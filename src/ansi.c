@@ -232,16 +232,16 @@ void ansi_set_style(AnsiStyle style) {
     if (style.underline) {
         ansi_write(";4");
         switch (style.underline) {
-            case DOUBLE:
+            case ANSI_UNDERLINE_DOUBLE:
                 ansi_write(":2");
                 break;
-            case CURLY:
+            case ANSI_UNDERLINE_CURLY:
                 ansi_write(":3");
                 break;
-            case DOTTED:
+            case ANSI_UNDERLINE_DOTTED:
                 ansi_write(":4");
                 break;
-            case DASHED:
+            case ANSI_UNDERLINE_DASHED:
                 ansi_write(":5");
                 break;
             default:

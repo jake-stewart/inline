@@ -12,8 +12,8 @@ typedef struct {
     FdStrategyType strategy[3];
 } FdStrategy;
 
-void fd_strategy_prepare(FdStrategy *strategy);
-void fd_strategy_apply_slave(FdStrategy *strategy);
-void fd_strategy_apply_master(FdStrategy *strategy, int *fds);
+int fd_strategy_prepare(FdStrategy *strategy);
+int fd_strategy_apply_slave(FdStrategy *strategy);
+int fd_strategy_apply_master(FdStrategy *strategy, int *fds);
 
 #endif

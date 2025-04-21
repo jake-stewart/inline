@@ -41,7 +41,7 @@ int utf8_codepoint_to_bytes(uint32_t cp, char *buf) {
     }
 }
 
-int utf8_bytes_to_codepoint(const char *buf, u_int32_t *cp) {
+int utf8_bytes_to_codepoint(const char *buf, uint32_t *cp) {
     int length = utf8_glyph_len(*buf);
     switch (length) {
         case 1:

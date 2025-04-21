@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "signal_handler.h"
 #include <unistd.h>
+#include <signal.h>
 
 InlineTerm *inline_term_new() {
     InlineTerm *term;
@@ -178,7 +179,11 @@ int on_process_output(fd_event ev) {
         ssize_t bytes_read;
         ASSERT(({
             bytes_read = read(ev.fd, buffer, sizeof buffer);
-        }) >= 0, "failed to read from process");
+            if (bytes_read < 0 && errno == EIO) {
+                bytes_read = 0;
+            }
+            bytes_read >= 0;
+        }), "failed to read from process");
 
         if (bytes_read == 0) {
             term->pty->alive = false;
@@ -472,7 +477,7 @@ exit:
         }
     }
     term->new_state.cursor_visible = true;
-    term->new_state.cursor_shape = VTERM_PROP_CURSORSHAPE_BLOCK;
+    term->new_state.cursor_shape = ANSI_CURSOR_SHAPE_BLOCK;
     term->new_state.mouse_mode = 0;
     inline_term_state_update(term, false);
 

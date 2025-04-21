@@ -5,7 +5,7 @@
 extern _Thread_local const char *errmsg;
 extern _Thread_local char errmsg_buffer[1024];
 
-#define DEBUG_ASSERT
+// #define DEBUG_ASSERT
 
 #define ASSERT_NEW(expr) \
     if (!(expr)) { \

@@ -131,11 +131,16 @@ int ansi_get_pos(int *y, int *x) {
         ASSERT(({
             bytes_read = timeout_read(
                 fileno(input), buf + len, 1, 100000);
-        }) > 0);
+        }) > 0, "failed to read cursor position");
     }
     while (buf[len++] != 'R' && len < 127);
     buf[len] = 0;
-    ASSERT(sscanf(buf, "\x1b[%d;%dR", y, x) == 2);
+    ASSERT(sscanf(buf, "\x1b[%d;%dR", y, x) == 2,
+           "failed to parse cursor position");
+
+    char buffer[1024];
+    sscanf(buf, "%*s%d", (int*)NULL);
+
 exit:
     return ret;
 }
@@ -151,13 +156,13 @@ int ansi_get_background_color(ColorRgb *color) {
         ASSERT(({
             bytes_read = timeout_read(
                 fileno(input), buf + len, 1, 100000);
-        }) > 0);
+        }) > 0, "failed to read background color");
     }
     while (buf[len++] != '\x07' && len < 127);
     buf[len] = 0;
     int r, g, b;
-    ASSERT(sscanf(buf, "\x1b]11;rgb:%x/%x/%x", &r, &g, &b) == 3);
-    // printf("%d,%d,%d\n", r, g, b);
+    ASSERT(sscanf(buf, "\x1b]11;rgb:%x/%x/%x", &r, &g, &b) == 3,
+           "failed to parse background color");
     color->r = r / 256;
     color->g = g / 256;
     color->b = b / 256;

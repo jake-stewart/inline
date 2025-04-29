@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdio.h>
 
+extern _Thread_local unsigned int assert_depth;
 extern _Thread_local const char *errmsg;
 extern _Thread_local char errmsg_buffer[1024];
 
@@ -21,22 +22,32 @@ extern _Thread_local char errmsg_buffer[1024];
     goto exit; \
 
 #define ASSERT_2(expr, message) { \
+    if (assert_depth++ == 0) { \
+        errmsg = NULL; \
+    } \
     errno = 0; \
-    errmsg = NULL; \
     if (!(expr)) { \
         ret = errno ? errno : -1; \
-        errmsg = message; \
+        if (!errmsg) { \
+            errmsg = message; \
+        } \
+        assert_depth--; \
         goto exit; \
     } \
+    assert_depth--; \
 }
 
 #define ASSERT_1(expr) { \
+    if (assert_depth++ == 0) { \
+        errmsg = NULL; \
+    } \
     errno = 0; \
-    errmsg = NULL; \
     if (!(expr)) { \
         ret = errno ? errno : -1; \
+        assert_depth--; \
         goto exit; \
     } \
+    assert_depth--; \
 }
 
 #define ASSERT_HELPER(_1, _2, NAME, ...) NAME
@@ -54,8 +65,10 @@ extern _Thread_local char errmsg_buffer[1024];
 #define ERROR(fmt, ...) ERROR_IMPL(fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define ASSERT_2(expr, message, file, line) { \
+    if (assert_depth++ == 0) { \
+        errmsg = NULL; \
+    } \
     errno = 0; \
-    errmsg = NULL; \
     if (!(expr)) { \
         ret = errno ? errno : -1; \
         if (!errmsg) { \
@@ -63,13 +76,17 @@ extern _Thread_local char errmsg_buffer[1024];
                      file, line, message); \
             errmsg = errmsg_buffer; \
         } \
+        assert_depth--; \
         goto exit; \
     } \
+    assert_depth--; \
 }
 
 #define ASSERT_1(expr, file, line) { \
+    if (assert_depth++ == 0) { \
+        errmsg = NULL; \
+    } \
     errno = 0; \
-    errmsg = NULL; \
     if (!(expr)) { \
         ret = errno ? errno : -1; \
         if (!errmsg) { \
@@ -77,8 +94,10 @@ extern _Thread_local char errmsg_buffer[1024];
                      "%s:%d: unhandled error", file, line); \
             errmsg = errmsg_buffer; \
         } \
+        assert_depth--; \
         goto exit; \
     } \
+    assert_depth--; \
 }
 
 #define ASSERT_HELPER(_1, _2, NAME, ...) NAME

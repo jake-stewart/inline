@@ -470,7 +470,6 @@ exit:
             term->reader = NULL;
         }
         if (term->pty) {
-            pseudo_term_kill(term->pty, 9);
             pseudo_term_free(term->pty);
             term->pty = NULL;
         }

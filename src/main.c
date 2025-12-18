@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
 
     term->vertical_resize_config = config.vertical_resize_config;
     term->horizontal_resize_config = config.horizontal_resize_config;
+    term->altscreen = config.altscreen;
     term->border_type = config.border;
     term->border_style = config.border_style;
 

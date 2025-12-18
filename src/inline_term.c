@@ -373,9 +373,15 @@ int inline_term_apply_size(InlineTerm *term, struct winsize ws) {
         term->old_state.cursor_pos.row + term->border;
 
     int x, y;
-    ASSERT(!ansi_get_pos(&y, &x));
-    if (term->rect.y) {
-        y -= cursor_row_offset;
+    if (term->altscreen) {
+        x = 1;
+        y = 1;
+    }
+    else {
+        ASSERT(!ansi_get_pos(&y, &x));
+        if (term->rect.y) {
+            y -= cursor_row_offset;
+        }
     }
 
     const int box_h = h + border * 2;
@@ -453,6 +459,9 @@ int inline_term_prepare_mainloop(InlineTerm *term, char **command) {
     ASSERT(term->reader = input_reader_new(term->vterm, fileno(term->tty)));
     ASSERT(term->renderer = inline_term_renderer_new(
         vterm_obtain_screen(term->vterm)));
+    if (term->altscreen) {
+        ansi_write("\x1b[?1049h");
+    }
     ASSERT(!inline_term_apply_size(term, ws));
 
 exit:
@@ -537,6 +546,9 @@ void inline_term_stop(InlineTerm *term) {
         ansi_move(term->rect.y - term->border, 1);
     }
     ansi_clear_til_eof();
+    if (term->altscreen) {
+        ansi_write("\x1b[?1049l");
+    }
     ansi_flush();
 }
 

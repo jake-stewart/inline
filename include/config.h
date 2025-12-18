@@ -2,12 +2,12 @@
 #define CONFIG_H
 
 #include <stdbool.h>
-#include "color_16.h"
 #include "ansi.h"
 #include "border.h"
 #include "inline_term.h"
 
 typedef struct {
+    bool altscreen;
     BorderType border;
     AnsiStyle border_style;
     bool capture_stdout;

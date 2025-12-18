@@ -35,6 +35,7 @@ typedef struct {
     BorderType border_type;
     AnsiStyle border_style;
     Rect rect;
+    bool altscreen;
     bool border;
     bool resized;
     InlineTermResizeConfig horizontal_resize_config;

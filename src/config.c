@@ -25,6 +25,7 @@ void usage() {
     printf("                    can be provided as a percentage of screen height.\n");
     printf("  -c  --cols        size of terminal in cols or 0 for max.\n");
     printf("                    can be provided as a percentage of screen width.\n");
+    printf("  -a  --altscreen   use the alternate screen.\n");
     printf("  -h  --help        show this message.\n");
     printf("  -v  --version     print version information.\n");
 }
@@ -130,6 +131,7 @@ void parse_options(int argc, char *argv[], Config *config) {
         {"color", required_argument, 0, 'C'},
         {"rows", required_argument, 0, 'r'},
         {"cols", required_argument, 0, 'c'},
+        {"altscreen", no_argument, 0, 'a'},
         {"stdout", no_argument, 0, 'o'},
         {"stderr", no_argument, 0, 'e'},
         {0, 0, 0, 0}
@@ -137,6 +139,8 @@ void parse_options(int argc, char *argv[], Config *config) {
 
     int idx = 0;
     optind = 1;
+
+    bool rows_set = false;
 
     while (optind < argc && argv[optind][0] == '-') {
         if (!strcmp(argv[optind], "--")) {
@@ -146,7 +150,7 @@ void parse_options(int argc, char *argv[], Config *config) {
         int opt = getopt_long(
             argc,
             argv,
-            "h v V B R A C: r: c: o e",
+            "h v V B R A C: r: c: a o e",
             options,
             &idx
         );
@@ -158,6 +162,7 @@ void parse_options(int argc, char *argv[], Config *config) {
                 config->capture_stderr = true;
                 break;
             case 'r':
+                rows_set = true;
                 if (str_endswith(optarg, "%")) {
                     config->vertical_resize_config.exact = 0;
                     percent_arg("rows",
@@ -196,9 +201,15 @@ void parse_options(int argc, char *argv[], Config *config) {
                 }
                 color_arg("border", &config->border_style.fg);
                 break;
+            case 'a':
+                config->altscreen = true;
+                if (!rows_set) {
+                    config->vertical_resize_config.exact = 0;
+                }
+                break;
             case 'v':
             case 'V':
-                printf("inline 1.0.5\n");
+                printf("inline 1.1.0\n");
                 exit(0);
                 break;
             case 'h':

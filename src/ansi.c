@@ -138,7 +138,6 @@ int ansi_get_pos(int *y, int *x) {
     ASSERT(sscanf(buf, "\x1b[%d;%dR", y, x) == 2,
            "failed to parse cursor position");
 
-    char buffer[1024];
     sscanf(buf, "%*s%d", (int*)NULL);
 
 exit:
